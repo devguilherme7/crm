@@ -10,4 +10,6 @@ public interface RegistrationSessionRepository {
     Optional<RegistrationSession> findById(String sessionId);
 
     Optional<RegistrationSession> findByEmail(String email);
+
+    void delete(String sessionId);
 }

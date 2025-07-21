@@ -56,7 +56,11 @@ public class User extends AuditableEntity {
         this.firstName = firstName.trim();
         this.lastName = lastName.trim();
         this.email = email.toLowerCase().trim();
-        this.password = password;
+        this.password = password; // TODO: Encrypt the password before storing it
         this.active = true;
+    }
+
+    public void verifyEmail(LocalDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
     }
 }

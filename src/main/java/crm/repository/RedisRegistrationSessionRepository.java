@@ -12,8 +12,8 @@ import io.quarkus.redis.datasource.value.ValueCommands;
 @ApplicationScoped
 public class RedisRegistrationSessionRepository implements RegistrationSessionRepository {
 
-    private static final String REGISTRATION_SESSION_KEY_PREFIX = "uac:session:";
-    private static final String REGISTRATION_SESSION_EMAIL_KEY = "uac:email:";
+    private static final String REGISTRATION_SESSION_KEY_PREFIX = "registration:session:";
+    private static final String REGISTRATION_SESSION_EMAIL_KEY = "registration:email:";
 
     private final RedisDataSource redis;
     private final HashCommands<String, String, String> hash;
@@ -56,5 +56,15 @@ public class RedisRegistrationSessionRepository implements RegistrationSessionRe
         String emailIndexKey = REGISTRATION_SESSION_EMAIL_KEY + email;
         String sessionId = value.get(emailIndexKey);
         return findById(sessionId);
+    }
+
+    @Override
+    public void delete(String sessionId) {
+        String sessionKey = REGISTRATION_SESSION_KEY_PREFIX + sessionId;
+        findById(sessionId).ifPresent(session -> {
+            String emailIndexKey = REGISTRATION_SESSION_EMAIL_KEY + session.getEmail();
+            redis.key().del(emailIndexKey);
+            redis.key().del(sessionKey);
+        });
     }
 }

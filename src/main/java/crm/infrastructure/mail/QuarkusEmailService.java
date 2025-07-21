@@ -6,12 +6,12 @@ import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 
 @ApplicationScoped
-public class EmailServiceImpl implements EmailService {
+public class QuarkusEmailService implements EmailService {
 
     private final Mailer mailer;
 
     @Inject
-    public EmailServiceImpl(Mailer mailer) {
+    public QuarkusEmailService(Mailer mailer) {
         this.mailer = mailer;
     }
 

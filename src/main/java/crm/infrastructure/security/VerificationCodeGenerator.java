@@ -1,6 +1,6 @@
 package crm.infrastructure.security;
 
-public interface SecureCodeGenerator {
+public interface VerificationCodeGenerator {
 
     String generate(int length);
 }

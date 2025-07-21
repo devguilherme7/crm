@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class SecureNumericCodeGenerator implements SecureCodeGenerator {
+public class SecureVerificationCodeGenerator implements VerificationCodeGenerator {
 
     private final SecureRandom random = new SecureRandom();
 

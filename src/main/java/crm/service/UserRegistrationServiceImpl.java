@@ -1,6 +1,6 @@
 package crm.service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -9,9 +9,11 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import crm.data.CreateAccountRequest;
 import crm.data.RegistrationSession;
+import crm.entity.User;
 import crm.infrastructure.mail.EmailService;
-import crm.infrastructure.security.SecureCodeGenerator;
+import crm.infrastructure.security.VerificationCodeGenerator;
 import crm.repository.RegistrationSessionRepository;
 import crm.repository.UserRepository;
 
@@ -23,15 +25,16 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
 
     private final UserRepository userRepository;
     private final RegistrationSessionRepository sessionRepository;
-    private final SecureCodeGenerator codeGenerator;
+    private final VerificationCodeGenerator codeGenerator;
     private final EmailService emailService;
 
     @Inject
     public UserRegistrationServiceImpl(
             UserRepository userRepository,
             RegistrationSessionRepository sessionRepository,
-            SecureCodeGenerator codeGenerator,
-            EmailService emailService) {
+            VerificationCodeGenerator codeGenerator,
+            EmailService emailService
+    ) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.codeGenerator = codeGenerator;
@@ -53,7 +56,7 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
         String sessionId = String.valueOf(UUID.randomUUID());
         String verificationCode = codeGenerator.generate(VERIFICATION_CODE_LENGTH);
 
-        var codeExpiresAt = Instant.now().plusSeconds(CODE_EXPIRATION_IN_SECONDS);
+        var codeExpiresAt = LocalDateTime.now().plusSeconds(CODE_EXPIRATION_IN_SECONDS);
         var session = new RegistrationSession(sessionId, email);
         session.setVerificationCode(verificationCode, codeExpiresAt);
 
@@ -79,10 +82,30 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
         }
 
         String newCode = codeGenerator.generate(VERIFICATION_CODE_LENGTH);
-        session.setVerificationCode(newCode, Instant.now().plusSeconds(CODE_EXPIRATION_IN_SECONDS));
+        session.setVerificationCode(newCode, LocalDateTime.now().plusSeconds(CODE_EXPIRATION_IN_SECONDS));
         sessionRepository.save(session);
 
         emailService.sendVerificationEmail(session.getEmail(), newCode);
+    }
+
+    @Override
+    @Transactional
+    public void createAccount(String sessionId, CreateAccountRequest request) {
+        RegistrationSession session = getCurrentSession(sessionId);
+
+        if (!session.isVerified()) {
+            throw new BadRequestException("E-mail não verificado. Verifique seu e-mail antes de completar o registro.");
+        }
+
+        if (userRepository.existsByEmail(session.getEmail())) {
+            throw new WebApplicationException("Endereço de e-mail já cadastrado.", Response.Status.CONFLICT);
+        }
+
+        var user = new User(request.firstName(), request.lastName(), session.getEmail(), request.password());
+        user.verifyEmail(session.getEmailVerifiedAt());
+        userRepository.save(user);
+
+        sessionRepository.delete(sessionId);
     }
 
     private RegistrationSession getCurrentSession(String sessionId) {

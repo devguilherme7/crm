@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import crm.data.CreateAccountRequest;
 import crm.data.StartRegistrationRequest;
 import crm.data.VerifyCodeRequest;
 import crm.service.UserRegistrationService;
@@ -23,7 +24,7 @@ import crm.service.UserRegistrationService;
 @Tag(name = "Registration")
 public class RegistrationResource {
 
-    private static final String USER_ACCOUNT_CREATION_SESSION_ID_COOKIE_NAME = "_uac_sid";
+    private static final String SESSION_COOKIE_NAME = "_uac_sid";
 
     private final UserRegistrationService userRegistrationService;
 
@@ -33,13 +34,15 @@ public class RegistrationResource {
     }
 
     @POST
-    @Operation(summary = "Start registration",
-            description = "Starts the registration process by sending a verification code to the user's email.")
-    @APIResponse(responseCode = "204", description = "Registration started successfully with session cookie set")
-    @APIResponse(responseCode = "400", description = "Invalid email or registration failed")
+    @Operation(
+            summary = "Start registration",
+            description = "Starts the registration process by sending a verification code to the user's email."
+    )
+    @APIResponse(responseCode = "204", description = "Registration started successfully")
+    @APIResponse(responseCode = "409", description = "User already exists")
     public Response startRegistration(@Valid StartRegistrationRequest request) {
         String sessionId = userRegistrationService.startRegistration(request.email());
-        NewCookie cookie = new NewCookie.Builder(USER_ACCOUNT_CREATION_SESSION_ID_COOKIE_NAME)
+        NewCookie cookie = new NewCookie.Builder(SESSION_COOKIE_NAME)
                 .value(sessionId)
                 .maxAge(3600)
                 .path("/api/registrations")
@@ -53,15 +56,15 @@ public class RegistrationResource {
     @Path("/verifyCode")
     @Operation(
             summary = "Email verification",
-            description = "Verify the email address using the 6-digit code sent in Step 1.")
+            description = "Verify the email address using the 6-digit code sent in Step 1."
+    )
     @APIResponse(responseCode = "204", description = "Email verified successfully.")
     @APIResponse(
             responseCode = "400",
-            description = "Invalid verification code, session expired, email already verified, or missing session cookie")
-    public Response verifyCode(
-            @CookieParam(USER_ACCOUNT_CREATION_SESSION_ID_COOKIE_NAME) String sessionId,
-            @Valid VerifyCodeRequest request) {
-
+            description = "Invalid verification code, session expired, email already verified, "
+                    + "or missing session cookie"
+    )
+    public Response verifyCode(@CookieParam(SESSION_COOKIE_NAME) String sessionId, @Valid VerifyCodeRequest request) {
         userRegistrationService.verifyCode(sessionId, request.verificationCode());
         return Response.noContent().build();
     }
@@ -70,13 +73,22 @@ public class RegistrationResource {
     @Path("/resendVerificationCode")
     @Operation(
             summary = "Resend verification code",
-            description = "Resend the 6-digit verification code to the registered email.")
+            description = "Resend the 6-digit verification code to the registered email."
+    )
     @APIResponse(responseCode = "204", description = "Verification code resent successfully")
     @APIResponse(responseCode = "400", description = "Email already verified, or invalid session")
-    public Response resendVerificationCode(
-            @CookieParam(USER_ACCOUNT_CREATION_SESSION_ID_COOKIE_NAME) String sessionId) {
-
+    public Response resendVerificationCode(@CookieParam(SESSION_COOKIE_NAME) String sessionId) {
         userRegistrationService.resendVerificationCode(sessionId);
         return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/createAccount")
+    public Response createAccount(
+            @CookieParam(SESSION_COOKIE_NAME) String sessionId,
+            @Valid CreateAccountRequest request
+    ) {
+        userRegistrationService.createAccount(sessionId, request);
+        return Response.status(Response.Status.CREATED).build();
     }
 }

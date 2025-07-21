@@ -5,7 +5,7 @@ import crm.entity.User;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 
 @ApplicationScoped
-public class UserRepositoryImpl implements UserRepository, PanacheRepository<User> {
+public class JpaUserRepository implements UserRepository, PanacheRepository<User> {
 
     @Override
     public void save(User user) {

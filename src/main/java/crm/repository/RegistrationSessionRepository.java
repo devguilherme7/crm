@@ -7,7 +7,7 @@ public interface RegistrationSessionRepository {
 
     void save(RegistrationSession session);
 
-    Optional<RegistrationSession> findBySessionId(String sessionId);
+    Optional<RegistrationSession> findById(String sessionId);
 
     Optional<RegistrationSession> findByEmail(String email);
 }

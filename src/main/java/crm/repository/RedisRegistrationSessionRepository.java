@@ -39,7 +39,7 @@ public class RedisRegistrationSessionRepository implements RegistrationSessionRe
     }
 
     @Override
-    public Optional<RegistrationSession> findBySessionId(String sessionId) {
+    public Optional<RegistrationSession> findById(String sessionId) {
         String sessionKey = REGISTRATION_SESSION_KEY_PREFIX + sessionId;
 
         Map<String, String> data = hash.hgetall(sessionKey);
@@ -55,6 +55,6 @@ public class RedisRegistrationSessionRepository implements RegistrationSessionRe
     public Optional<RegistrationSession> findByEmail(String email) {
         String emailIndexKey = REGISTRATION_SESSION_EMAIL_KEY + email;
         String sessionId = value.get(emailIndexKey);
-        return findBySessionId(sessionId);
+        return findById(sessionId);
     }
 }

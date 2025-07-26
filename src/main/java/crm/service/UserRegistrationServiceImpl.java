@@ -1,8 +1,8 @@
 package crm.service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -48,10 +48,8 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
             throw new WebApplicationException("Endereço de e-mail já cadastrado.", Response.Status.CONFLICT);
         }
 
-        Optional<RegistrationSession> existingSessionOpt = sessionRepository.findByEmail(email);
-        if (existingSessionOpt.isPresent()) {
-            return existingSessionOpt.get().getId();
-        }
+        sessionRepository.findByEmail(email).ifPresent(existingSession ->
+                sessionRepository.delete(existingSession.getId()));
 
         String sessionId = String.valueOf(UUID.randomUUID());
         String verificationCode = codeGenerator.generate(VERIFICATION_CODE_LENGTH);

@@ -1,10 +1,9 @@
 package crm.data;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import jakarta.ws.rs.BadRequestException;
 
+@SuppressWarnings("unused")
 public class RegistrationSession {
 
     private final String id;
@@ -13,6 +12,11 @@ public class RegistrationSession {
     private String verificationCode;
     private LocalDateTime codeExpiresAt;
     private LocalDateTime emailVerifiedAt;
+
+    protected RegistrationSession() {
+        this.id = null;
+        this.email = null;
+    }
 
     public RegistrationSession(String id, String email) {
         this.id = id;
@@ -40,36 +44,6 @@ public class RegistrationSession {
         this.emailVerifiedAt = LocalDateTime.now();
     }
 
-    public Map<String, String> toHashMap() {
-        Map<String, String> hash = new HashMap<>();
-        hash.put("sessionId", id);
-        hash.put("email", email);
-        hash.put("verified", Boolean.toString(verified));
-        hash.put("verificationCode", verificationCode);
-        hash.put("codeExpiresAt", codeExpiresAt.toString());
-        hash.put("emailVerifiedAt", String.valueOf(emailVerifiedAt));
-        return hash;
-    }
-
-    public static RegistrationSession fromHashMap(Map<String, String> hash) {
-        var session = new RegistrationSession(hash.get("sessionId"), hash.get("email"));
-        session.verificationCode = hash.get("verificationCode");
-
-        String codeExpiresAtStr = hash.get("codeExpiresAt");
-        if (codeExpiresAtStr != null && !codeExpiresAtStr.equals("null")) {
-            session.codeExpiresAt = LocalDateTime.parse(codeExpiresAtStr);
-        }
-
-        session.verified = Boolean.parseBoolean(hash.get("verified"));
-
-        String emailVerifiedAtStr = hash.get("emailVerifiedAt");
-        if (emailVerifiedAtStr != null && !emailVerifiedAtStr.equals("null")) {
-            session.emailVerifiedAt = LocalDateTime.parse(emailVerifiedAtStr);
-        }
-
-        return session;
-    }
-
     public boolean isCodeExpired() {
         return LocalDateTime.now().isAfter(codeExpiresAt);
     }
@@ -84,6 +58,14 @@ public class RegistrationSession {
 
     public boolean isVerified() {
         return verified;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public LocalDateTime getCodeExpiresAt() {
+        return codeExpiresAt;
     }
 
     public LocalDateTime getEmailVerifiedAt() {
